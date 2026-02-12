@@ -17,6 +17,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent default scrolling for Space/Arrow keys
+      if (['Space', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
         nextSlide();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {

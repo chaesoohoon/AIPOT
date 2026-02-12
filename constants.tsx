@@ -200,7 +200,7 @@ export const SLIDES: SlideContent[] = [
     id: 16,
     type: SlideType.CLOSING,
     title: "Closing",
-    subtitle: "우리는 AI 기능 교육에 머물지 않습니다.\n시장이지향하는 ‘압도적 결과’를 설계합니다.",
+    subtitle: "우리는 AI 기능 교육에 머물지 않습니다.\n시장이 지향하는 ‘압도적 결과’를 설계합니다.",
     highlight: "11주 후, 수강생은\n단순한 교육 수료자가 아닌\n대체 불가능한 실무자가 됩니다."
   }
 ];
