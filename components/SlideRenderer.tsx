@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { SlideContent, SlideType } from '../types';
 import { 
-  ArrowRight, Check, Star, ArrowUpRight, Minus, Award, PenTool, MonitorPlay
+  ArrowRight, Check, Star, ArrowUpRight, Minus, Award, PenTool, MonitorPlay,
+  AlertCircle, Sparkles
 } from 'lucide-react';
 
 interface Props {
@@ -48,7 +49,7 @@ const SlideRenderer: React.FC<Props> = ({ data }) => {
                  transition={{ delay: 0.2 }}
                  className="px-4 py-2 bg-blue-600/20 text-blue-400 text-xs font-bold tracking-[0.2em] uppercase border border-blue-500/20"
                >
-                 Education Proposal 2025
+                 Education Proposal 2026
                </motion.div>
             </div>
 
@@ -322,29 +323,53 @@ const SlideRenderer: React.FC<Props> = ({ data }) => {
       case SlideType.BIG_NUMBER:
         return (
           <div className="h-full flex flex-col justify-center items-center text-center w-full max-w-5xl">
-            <h2 className="text-sm font-bold tracking-[0.4em] text-blue-400 mb-16 uppercase border border-blue-500/30 px-6 py-2 rounded-full">
+             <motion.div 
+               initial={{ opacity: 0, y: -20 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="flex items-center gap-2 mb-12 text-rose-400 border border-rose-500/30 bg-rose-500/10 px-6 py-2 rounded-full"
+             >
+               <AlertCircle size={16} />
+               <span className="text-xs font-bold tracking-[0.2em] uppercase">Limited Availability</span>
+             </motion.div>
+
+            <h2 className="text-sm font-bold tracking-[0.4em] text-blue-400 mb-8 uppercase">
               {title}
             </h2>
             
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-              className="text-[12rem] md:text-[18rem] leading-none font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/10 tracking-tighter mix-blend-overlay"
-            >
-              {highlight}
-            </motion.div>
+            <div className="relative mb-8">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-blue-500/20 blur-[80px] rounded-full" />
+              
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+                className="relative z-10 border border-white/10 bg-white/5 backdrop-blur-sm px-12 py-8 rounded-3xl"
+              >
+                <div className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter break-keep leading-tight">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-blue-400">
+                    {highlight}
+                  </span>
+                </div>
+              </motion.div>
+            </div>
             
-            <p className="text-2xl md:text-3xl text-white mt-8 max-w-3xl font-light leading-relaxed break-keep">
+            <p className="text-xl md:text-2xl text-slate-300 mt-8 max-w-3xl font-light leading-relaxed break-keep">
               {subtitle}
             </p>
             
             <div className="flex flex-wrap gap-4 mt-16 justify-center">
               {body?.map((text, i) => (
-                <div key={i} className="flex items-center gap-2 text-slate-400 font-light tracking-wide px-4 py-2 bg-white/5 rounded-sm break-keep">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 + (i * 0.1) }}
+                  className="flex items-center gap-2 text-slate-400 font-light tracking-wide px-5 py-3 bg-white/5 border border-white/10 rounded-full break-keep hover:border-blue-500/30 hover:bg-white/10 transition-colors"
+                >
+                  <Sparkles size={14} className="text-blue-400" />
                   {text}
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -387,7 +412,7 @@ const SlideRenderer: React.FC<Props> = ({ data }) => {
                className="mt-24 pt-12 border-t border-white/10 w-full max-w-lg flex justify-between items-center text-[10px] md:text-xs tracking-[0.3em] text-slate-500 uppercase font-medium"
             >
               <span>The International Vocational Training Institute</span>
-              <span>2025 Education Plan</span>
+              <span>2026 Education Plan</span>
             </motion.div>
           </div>
         );

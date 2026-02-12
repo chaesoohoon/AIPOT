@@ -26,16 +26,16 @@ export const SLIDES: SlideContent[] = [
       "디지털 마케팅 직무의 전면 재편"
     ]
   },
-  // 3. Target Analysis
+  // 3. Target Analysis (Modified for Discharged Soldiers)
   {
     id: 3,
     type: SlideType.GRID_CARDS,
-    title: "타겟 분석 : 경력단절 여성",
-    subtitle: "자격 + 실무 + 포트폴리오 동시 확보 모델 필요",
+    title: "타겟 분석 : 제대 군인",
+    subtitle: "군 경험(Discipline) + AI 기술(Skill) = 성공적 사회 복귀",
     items: [
-      { title: "진입 장벽", desc: "재취업을 위한 심리적, 기술적 장벽 존재" },
-      { title: "집중 학습", desc: "빠른 현업 복귀를 위한 단기 집중 과정 필요" },
-      { title: "직무 역량", desc: "단순 이론이 아닌 실질적 Output 요구" }
+      { title: "신속한 사회 적응", desc: "급변하는 디지털 환경에 즉각 대응 가능한 실무 역량 탑재" },
+      { title: "커리어 레벨업", desc: "단순 노무/사무직을 넘어 고부가가치 크리에이티브 전문가로 도약" },
+      { title: "경험의 자산화", desc: "군 생활의 작전/기획 경험을 AI 프롬프트 엔지니어링 능력으로 전환" }
     ]
   },
   // 4. Program Proposal Title
@@ -142,17 +142,17 @@ export const SLIDES: SlideContent[] = [
       { title: "Gen AI Video", desc: "Sora, Runway 등을 활용한 소스 생성" }
     ]
   },
-  // 12. Operational Strategy
+  // 12. Operational Strategy (Modified for Urgency)
   {
     id: 12,
     type: SlideType.BIG_NUMBER,
-    title: "소수정예 운영 전략",
-    highlight: "14명",
-    subtitle: "AI 교육은 이론 전달이 아닌, 개별 피드백 중심이기 때문입니다.",
+    title: "소수정예 선착순 모집",
+    highlight: "오직 14명",
+    subtitle: "망설이는 순간 마감됩니다. 압도적 성장을 위한 기회는 제한되어 있습니다.",
     body: [
-      "1:1 프롬프트 교정",
-      "결과물 개선 디테일 지도",
-      "개별 포트폴리오 멘토링"
+      "1:1 밀착 포트폴리오 지도",
+      "실시간 피드백 시스템",
+      "조기 마감 주의"
     ]
   },
   // 13. Expected Outcomes
