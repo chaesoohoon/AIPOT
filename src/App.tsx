@@ -1,5 +1,6 @@
 import { AlertTriangle, Database, Home, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import CreatorBanner from "./components/CreatorBanner";
 import ExamModePage from "./pages/ExamModePage";
 import FavoritePage from "./pages/FavoritePage";
 import HomePage from "./pages/HomePage";
@@ -106,6 +107,8 @@ export default function App() {
         {page === "bank" ? <QuestionBankPage onBack={() => navigate("home")} /> : null}
         {page === "summary" ? <SummaryPage onBack={() => navigate("home")} /> : null}
       </main>
+
+      {page !== "exam" ? <CreatorBanner compact placement="footer" className="mx-auto max-w-7xl px-4 pb-6" /> : null}
 
       {resetOpen ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/50 p-4">

@@ -1,4 +1,5 @@
 import { ChevronLeft } from "lucide-react";
+import CreatorBanner from "../components/CreatorBanner";
 
 interface SummaryPageProps {
   onBack: () => void;
@@ -136,6 +137,8 @@ export default function SummaryPage({ onBack }: SummaryPageProps) {
           </div>
         </Panel>
       </section>
+
+      <CreatorBanner placement="summary" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { ChevronLeft, Printer, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
+import CreatorBanner from "../components/CreatorBanner";
 import FeedbackPanel from "../components/FeedbackPanel";
 import ProgressBar from "../components/ProgressBar";
 import ResultSummary from "../components/ResultSummary";
@@ -107,6 +108,8 @@ export default function ResultPage({ result, onBackHome, onPracticeWrong }: Resu
           );
         })}
       </section>
+
+      <CreatorBanner placement="result" />
     </div>
   );
 }

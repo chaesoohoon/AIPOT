@@ -1,5 +1,6 @@
 import { ChevronLeft, Printer, Star, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import CreatorBanner from "../components/CreatorBanner";
 import { getQuestionById } from "../data/questionBank";
 import { CATEGORIES, type Category } from "../types";
 import { storage } from "../utils/storage";
@@ -121,6 +122,8 @@ export default function WrongNotePage({ onBack, onPractice, onStored }: WrongNot
           )}
         </div>
       </section>
+
+      <CreatorBanner placement="wrong" />
     </div>
   );
 }

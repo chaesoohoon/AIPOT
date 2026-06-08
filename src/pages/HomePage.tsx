@@ -1,5 +1,6 @@
 import { BarChart3, BookOpen, ClipboardCheck, Database, FileText, NotebookTabs, Star, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import CreatorBanner from "../components/CreatorBanner";
 import ProgressBar from "../components/ProgressBar";
 import { questionCounts } from "../data/questionBank";
 import { getLearningSnapshot, storage } from "../utils/storage";
@@ -120,6 +121,8 @@ export default function HomePage({ onNavigate, onReset }: HomePageProps) {
         <Trash2 size={18} aria-hidden="true" />
         학습 기록 초기화
       </button>
+
+      <CreatorBanner placement="home" />
     </div>
   );
 }
