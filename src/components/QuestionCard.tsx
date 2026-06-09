@@ -1,4 +1,5 @@
 import ChoiceOption from "./ChoiceOption";
+import ResponsiveQuestionTable from "./ResponsiveQuestionTable";
 import SubjectiveAnswerBox from "./SubjectiveAnswerBox";
 import { QUESTION_TYPE_LABELS, type GradeResult, type Question } from "../types";
 
@@ -31,7 +32,7 @@ export default function QuestionCard({
   matchedKeywords = [],
   disabled = false,
 }: QuestionCardProps) {
-  const isChoiceType = question.type === "multiple" || question.type === "ox";
+  const isChoiceType = question.type === "multiple" || question.type === "ox" || question.type === "tableChoice";
   const isShortType = question.type === "short" || question.type === "blank";
   const subjective = question.type === "essay" || question.type === "prompt";
   const matchedSet = new Set(matchedKeywords);
@@ -49,6 +50,8 @@ export default function QuestionCard({
       </div>
 
       <h2 className="whitespace-pre-line text-xl font-black leading-8 tracking-normal text-slate-950 dark:text-white md:text-2xl">{question.question}</h2>
+
+      {question.table ? <ResponsiveQuestionTable table={question.table} /> : null}
 
       {isChoiceType ? (
         <div className="mt-6 grid gap-3">

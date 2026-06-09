@@ -17,10 +17,11 @@
 ] as const;
 
 export const DIFFICULTIES = ["쉬움", "보통", "어려움"] as const;
-export const QUESTION_TYPES = ["multiple", "ox", "short", "essay", "blank", "prompt"] as const;
+export const QUESTION_TYPES = ["multiple", "ox", "short", "tableChoice", "essay", "blank", "prompt"] as const;
 export const SOURCE_TYPES = ["빈출개념", "예상문제", "공개샘플변형", "실무형"] as const;
 export const QUALITY_STATUSES = ["정상", "문장수정", "보기수정", "정답애매", "해설부족", "범위초과", "삭제권장"] as const;
 export const EXAM_SUITABILITIES = ["실전적합", "학습적합", "심화학습", "수정필요", "삭제권장"] as const;
+export const QUESTION_STATUSES = ["active", "review", "deepPractice", "draft", "disabled"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -28,6 +29,7 @@ export type QuestionType = (typeof QUESTION_TYPES)[number];
 export type SourceType = (typeof SOURCE_TYPES)[number];
 export type QualityStatus = (typeof QUALITY_STATUSES)[number];
 export type ExamSuitability = (typeof EXAM_SUITABILITIES)[number];
+export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 export type GradeStatus = "correct" | "partial" | "wrong" | "unchecked";
 export type AppPage = "home" | "study" | "exam" | "result" | "wrong" | "favorite" | "stats" | "bank" | "summary";
 
@@ -35,17 +37,25 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   multiple: "객관식",
   ox: "OX",
   short: "단답형",
+  tableChoice: "표형",
   essay: "서술형",
   blank: "빈칸",
   prompt: "프롬프트 작성",
 };
 
+export interface QuestionTable {
+  headers: string[];
+  rows: string[][];
+}
+
 export interface Question {
   id: string;
   type: QuestionType;
+  status: QuestionStatus;
   category: Category;
   difficulty: Difficulty;
   question: string;
+  table?: QuestionTable;
   choices: string[];
   answer: string;
   acceptedAnswers: string[];
@@ -59,6 +69,7 @@ export interface Question {
   tags: string[];
   qualityStatus: QualityStatus;
   examSuitability: ExamSuitability;
+  duplicateGroup?: string;
   checklist?: string[];
   partialCriteria?: string[];
 }
@@ -72,15 +83,21 @@ export interface GradeResult {
 
 export interface AttemptRecord {
   id: string;
+  attemptId?: string;
   questionId: string;
-  mode: "study" | "exam";
+  mode: "study" | "exam" | "review";
   answeredAt: string;
   userAnswer: string;
+  correctAnswer?: string;
   result: GradeStatus;
+  isCorrect?: boolean;
+  isPartial?: boolean;
+  score?: number;
   scoreRatio: number;
   category: Category;
   difficulty: Difficulty;
   type: QuestionType;
+  examSessionId?: string;
 }
 
 export interface WrongNoteEntry {
@@ -108,6 +125,7 @@ export interface ExamCategoryBreakdown {
 
 export interface ExamResult {
   id: string;
+  examSessionId?: string;
   date: string;
   score: number;
   maxScore: number;
@@ -122,6 +140,8 @@ export interface ExamResult {
   answers: Record<string, string>;
   grading: Record<string, GradeStatus>;
   categoryBreakdown: Record<string, ExamCategoryBreakdown>;
+  typeBreakdown?: Record<string, ExamCategoryBreakdown>;
+  blueprint?: unknown;
   wrongQuestionIds: string[];
 }
 
@@ -130,6 +150,7 @@ export interface ExamSettings {
   minutes: number;
   categories: Category[];
   difficulties: Difficulty[];
+  includeTable: boolean;
   includeEssay: boolean;
   includePrompt: boolean;
   wrongFirst: boolean;

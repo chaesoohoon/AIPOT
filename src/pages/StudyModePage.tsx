@@ -19,7 +19,7 @@ interface StudyModePageProps {
 
 type StudyTrack = "quick" | "exam" | "wrong" | "deep";
 
-const objectiveTypes: QuestionType[] = ["multiple", "ox", "short", "blank"];
+const objectiveTypes: QuestionType[] = ["multiple", "ox", "short", "blank", "tableChoice"];
 
 const tabs: Array<{ id: StudyTrack; label: string; description: string }> = [
   { id: "quick", label: "빠른 학습", description: "객관식 · OX · 단답 · 빈칸" },
@@ -134,7 +134,7 @@ export default function StudyModePage({ poolIds, title, onBack, onStored }: Stud
               <QuestionCard
                 question={current}
                 value={session.answer}
-                onChange={current.type === "multiple" || current.type === "ox" ? session.selectChoice : session.updateAnswer}
+                onChange={current.type === "multiple" || current.type === "ox" || current.type === "tableChoice" ? session.selectChoice : session.updateAnswer}
                 mode="study"
                 grade={session.grade}
                 revealAnswer={Boolean(session.grade)}

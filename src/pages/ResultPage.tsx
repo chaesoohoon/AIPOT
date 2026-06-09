@@ -6,6 +6,7 @@ import ProgressBar from "../components/ProgressBar";
 import ResultSummary from "../components/ResultSummary";
 import { getQuestionById } from "../data/questionBank";
 import { gradeQuestion } from "../utils/grading";
+import { QUESTION_TYPE_LABELS } from "../types";
 import type { ExamResult, GradeResult, GradeStatus, Question } from "../types";
 
 interface ResultPageProps {
@@ -64,6 +65,19 @@ export default function ResultPage({ result, onBackHome, onPracticeWrong }: Resu
         <ResultStat label="부분정답" value={`${result.partialCount}`} />
         <ResultStat label="오답" value={`${result.wrongCount}`} />
       </section>
+
+      {result.typeBreakdown ? (
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="mb-3 text-lg font-black">이번 시험 구성</h2>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(result.typeBreakdown).map(([type, value]) => (
+              <span key={type} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 dark:bg-blue-950 dark:text-blue-200">
+                {QUESTION_TYPE_LABELS[type as keyof typeof QUESTION_TYPE_LABELS]} {value.total}문항
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -29,7 +29,7 @@ export const gradeQuestion = (question: Question, rawAnswer: string, checkedChec
   const answer = rawAnswer.trim();
   const accepted = [question.answer, ...question.acceptedAnswers];
 
-  if (question.type === "multiple" || question.type === "ox") {
+  if (question.type === "multiple" || question.type === "ox" || question.type === "tableChoice") {
     const isCorrect = accepted.some((candidate) => normalizeAnswer(candidate) === normalizeAnswer(answer));
     return {
       status: isCorrect ? "correct" : "wrong",

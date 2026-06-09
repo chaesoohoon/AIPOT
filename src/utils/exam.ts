@@ -1,5 +1,6 @@
-﻿import { questions } from "../data/questionBank";
-import type { Category, ExamSettings, FavoriteEntry, Question, QuestionType, WrongNoteEntry } from "../types";
+import { examBlueprint } from "../data/examBlueprint";
+import { questions } from "../data/questionBank";
+import type { ExamSettings, FavoriteEntry, Question, QuestionType, WrongNoteEntry } from "../types";
 
 const shuffle = <T,>(items: T[]) => {
   const copy = [...items];
@@ -10,58 +11,65 @@ const shuffle = <T,>(items: T[]) => {
   return copy;
 };
 
-const baseExamTypes: QuestionType[] = ["multiple", "ox", "short", "blank"];
+export interface ExamShortage {
+  type: QuestionType;
+  required: number;
+  available: number;
+}
 
-const typeTargets = (count: number, includeEssay: boolean, includePrompt: boolean) => {
-  const essay = includeEssay ? Math.max(1, Math.round(count * 0.05)) : 0;
-  const prompt = includePrompt ? Math.max(1, Math.round(count * 0.05)) : 0;
-  const ox = Math.max(1, Math.round(count * 0.125));
-  const short = Math.max(1, Math.round(count * 0.125));
-  const blank = 0;
-  const multiple = Math.max(0, count - ox - short - blank - essay - prompt);
-  return { multiple, ox, short, blank, essay, prompt };
-};
+export interface ExamPlan {
+  questions: Question[];
+  targets: Partial<Record<QuestionType, number>>;
+  shortages: ExamShortage[];
+  eligibleCount: number;
+}
 
-const categoryBalanced = (pool: Question[], count: number) => {
-  const groups = new Map<Category, Question[]>();
-  shuffle(pool).forEach((question) => {
-    groups.set(question.category, [...(groups.get(question.category) ?? []), question]);
+const allTypes: QuestionType[] = ["multiple", "tableChoice", "ox", "short", "blank", "essay", "prompt"];
+
+const scaledTargets = (settings: ExamSettings): Partial<Record<QuestionType, number>> => {
+  const baseTargets = { ...examBlueprint.typeTargets };
+  if (!settings.includeTable) baseTargets.tableChoice = 0;
+  if (!settings.includeEssay) baseTargets.essay = 0;
+  if (!settings.includePrompt) baseTargets.prompt = 0;
+
+  const baseTotal = allTypes.reduce((sum, type) => sum + (baseTargets[type] ?? 0), 0);
+  if (baseTotal === settings.questionCount) return baseTargets;
+  if (baseTotal <= 0) return baseTargets;
+
+  const scale = settings.questionCount / baseTotal;
+  const scaled: Partial<Record<QuestionType, number>> = {};
+  let assigned = 0;
+  const activeTypes = allTypes.filter((type) => (baseTargets[type] ?? 0) > 0);
+
+  activeTypes.forEach((type, index) => {
+    const raw = (baseTargets[type] ?? 0) * scale;
+    const count = index === activeTypes.length - 1 ? Math.max(0, settings.questionCount - assigned) : Math.max(0, Math.round(raw));
+    scaled[type] = count;
+    assigned += count;
   });
-  const categories = shuffle(Array.from(groups.keys()));
-  const selected: Question[] = [];
-  let cursor = 0;
-  while (selected.length < count && categories.length > 0) {
-    const category = categories[cursor % categories.length];
-    const list = groups.get(category) ?? [];
-    const next = list.shift();
-    if (next && !selected.some((question) => question.id === next.id)) selected.push(next);
-    if (!next || list.length === 0) {
-      const idx = categories.indexOf(category);
-      if (idx >= 0) categories.splice(idx, 1);
-    } else {
-      groups.set(category, list);
-      cursor += 1;
-    }
-  }
-  return selected;
+
+  return scaled;
 };
 
 const isAllowedForExam = (question: Question, settings: ExamSettings) => {
-  if (baseExamTypes.includes(question.type)) return question.examSuitability === "실전적합";
+  if (question.status !== "active") return false;
+  if (question.examSuitability !== "실전적합") return false;
+  if (question.type === "tableChoice") return settings.includeTable;
   if (question.type === "essay") return settings.includeEssay;
   if (question.type === "prompt") return settings.includePrompt;
-  return false;
+  return ["multiple", "ox", "short", "blank"].includes(question.type);
 };
 
-export const createExamQuestions = (
+export const createExamPlan = (
   settings: ExamSettings,
   favorites: FavoriteEntry[],
   wrongNotes: WrongNoteEntry[],
   initialPoolIds?: string[],
-) => {
+): ExamPlan => {
   const favoriteIds = new Set(favorites.map((favorite) => favorite.questionId));
   const retryMap = new Map(wrongNotes.map((note) => [note.questionId, note.retryCount]));
   const initialIds = initialPoolIds ? new Set(initialPoolIds) : undefined;
+  const targets = scaledTargets(settings);
 
   let pool = questions.filter((question) => {
     const categoryMatch = settings.categories.length === 0 || settings.categories.includes(question.category);
@@ -71,40 +79,46 @@ export const createExamQuestions = (
     return categoryMatch && difficultyMatch && favoriteMatch && poolMatch && isAllowedForExam(question, settings);
   });
 
-  if (settings.wrongFirst) {
-    pool = [...pool].sort((a, b) => (retryMap.get(b.id) ?? 0) - (retryMap.get(a.id) ?? 0) || Math.random() - 0.5);
-  } else {
-    pool = shuffle(pool);
-  }
+  pool = settings.wrongFirst
+    ? [...pool].sort((a, b) => (retryMap.get(b.id) ?? 0) - (retryMap.get(a.id) ?? 0) || Math.random() - 0.5)
+    : shuffle(pool);
 
-  const targets = typeTargets(settings.questionCount, settings.includeEssay, settings.includePrompt);
   const selected: Question[] = [];
+  const shortages: ExamShortage[] = [];
 
-  (Object.entries(targets) as Array<[QuestionType, number]>).forEach(([type, target]) => {
-    if (target <= 0) return;
-    const typed = pool.filter((question) => question.type === type && !selected.some((picked) => picked.id === question.id));
-    selected.push(...categoryBalanced(typed, target));
+  (Object.entries(targets) as Array<[QuestionType, number]>).forEach(([type, required]) => {
+    if (required <= 0) return;
+    const typed = pool.filter((question) => question.type === type);
+    if (typed.length < required) {
+      shortages.push({ type, required, available: typed.length });
+      return;
+    }
+    selected.push(...typed.slice(0, required));
   });
 
-  if (selected.length < settings.questionCount) {
-    selected.push(
-      ...categoryBalanced(
-        pool.filter((question) => !selected.some((picked) => picked.id === question.id)),
-        settings.questionCount - selected.length,
-      ),
-    );
-  }
-
-  return shuffle(selected).slice(0, settings.questionCount);
+  return {
+    questions: shortages.length ? [] : shuffle(selected),
+    targets,
+    shortages,
+    eligibleCount: pool.length,
+  };
 };
 
+export const createExamQuestions = (
+  settings: ExamSettings,
+  favorites: FavoriteEntry[],
+  wrongNotes: WrongNoteEntry[],
+  initialPoolIds?: string[],
+) => createExamPlan(settings, favorites, wrongNotes, initialPoolIds).questions;
+
 export const defaultExamSettings: ExamSettings = {
-  questionCount: 40,
-  minutes: 40,
+  questionCount: examBlueprint.totalQuestions,
+  minutes: examBlueprint.timeLimitMinutes,
   categories: [],
   difficulties: ["쉬움", "보통", "어려움"],
-  includeEssay: false,
-  includePrompt: false,
+  includeTable: examBlueprint.includeTableQuestions,
+  includeEssay: examBlueprint.includeEssay,
+  includePrompt: examBlueprint.includePromptPractice,
   wrongFirst: false,
   favoriteOnly: false,
 };

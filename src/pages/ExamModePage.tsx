@@ -5,7 +5,8 @@ import ModeSettings from "../components/ModeSettings";
 import QuestionCard from "../components/QuestionCard";
 import QuestionNavigator from "../components/QuestionNavigator";
 import { useExamMode } from "../hooks/useExamMode";
-import type { ExamResult } from "../types";
+import { QUESTION_TYPE_LABELS } from "../types";
+import type { ExamResult, QuestionType } from "../types";
 
 interface ExamModePageProps {
   initialPoolIds?: string[];
@@ -21,7 +22,7 @@ export default function ExamModePage({ initialPoolIds, onBack, onComplete, onSto
 
   const start = () => {
     setStartError("");
-    if (!exam.start()) setStartError("선택 조건에 맞는 문제가 없습니다. 설정을 조정하세요.");
+    if (!exam.start()) setStartError("examBlueprint 기준 출제 수를 채우지 못했습니다. 아래 부족한 유형을 확인하거나 설정을 조정하세요.");
   };
 
   const submit = () => {
@@ -39,11 +40,43 @@ export default function ExamModePage({ initialPoolIds, onBack, onComplete, onSto
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900">
           <h1 className="text-2xl font-black text-slate-950 dark:text-white">실전모드 설정</h1>
           <p className="mt-2 text-sm font-semibold leading-6 text-slate-500 dark:text-slate-400">
-            기본 실전모드는 CBT 대비용으로 객관식 30문항, OX 5문항, 단답형 5문항을 출제합니다. 긴 서술형과 프롬프트 작성형은 기본 제외됩니다.
+            기본 실전모드는 CBT 대비용으로 examBlueprint에 정의된 유형별 문항 수를 그대로 맞춰 출제합니다. 긴 서술형과 프롬프트 작성형은 기본 제외됩니다.
           </p>
         </div>
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Info label="시험명" value={exam.blueprint.examName} />
+            <Info label="총 문항 수" value={`${exam.settings.questionCount}문항`} />
+            <Info label="제한 시간" value={`${exam.settings.minutes}분`} />
+            <Info label="합격 기준" value={`${exam.blueprint.passScore}점 이상`} />
+            <Info label="표형 포함" value={exam.settings.includeTable ? "포함" : "제외"} />
+            <Info label="서술/프롬프트" value={`${exam.settings.includeEssay ? "서술 포함" : "서술 제외"} · ${exam.settings.includePrompt ? "프롬프트 포함" : "프롬프트 제외"}`} />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {Object.entries(exam.targets)
+              .filter(([, count]) => (count ?? 0) > 0)
+              .map(([type, count]) => (
+                <span key={type} className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 dark:bg-blue-950 dark:text-blue-200">
+                  {QUESTION_TYPE_LABELS[type as QuestionType]} {count}문항
+                </span>
+              ))}
+          </div>
+        </section>
         <ModeSettings value={exam.settings} onChange={exam.setSettings} onStart={start} availableCount={exam.availableCount} />
-        {startError ? <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">{startError}</div> : null}
+        {startError ? (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">
+            <div>{startError}</div>
+            {exam.shortages.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {exam.shortages.map((item) => (
+                  <span key={item.type} className="rounded-lg bg-white px-2 py-1 dark:bg-rose-900">
+                    {QUESTION_TYPE_LABELS[item.type]} 필요 {item.required} / 가능 {item.available}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -128,6 +161,15 @@ export default function ExamModePage({ initialPoolIds, onBack, onComplete, onSto
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
+      <div className="text-xs font-black text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 text-sm font-black text-slate-900 dark:text-white">{value}</div>
     </div>
   );
 }

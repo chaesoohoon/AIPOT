@@ -12,7 +12,11 @@ export const WrongNoteService = {
       questionId: question.id,
       mode: "study",
       userAnswer,
+      correctAnswer: question.answer,
       result: grade.status,
+      isCorrect: grade.status === "correct",
+      isPartial: grade.status === "partial",
+      score: grade.scoreRatio,
       scoreRatio: grade.scoreRatio,
       category: question.category,
       difficulty: question.difficulty,
@@ -23,9 +27,9 @@ export const WrongNoteService = {
       const hadWrongNote = storage.getWrongNotes().some((note) => note.questionId === question.id);
       if (hadWrongNote) {
         storage.markWrongAsCorrect(question.id);
-        return { message: "최근 정답으로 오답노트 상태를 업데이트했습니다.", tone: "success" };
+        return { message: "오답노트 상태를 최근 정답으로 업데이트했습니다.", tone: "success" };
       }
-      return { message: "풀이 기록이 저장되었습니다.", tone: "success" };
+      return { message: "풀이 기록을 저장했습니다.", tone: "success" };
     }
 
     storage.upsertWrongNote(makeWrongNoteEntry(question, userAnswer, grade.status));

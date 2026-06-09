@@ -1,6 +1,7 @@
-﻿import type { Question } from "../types";
+﻿import { tableQuestions } from "./tableQuestions";
+import type { Question, QuestionStatus } from "../types";
 
-export const questions: Question[] = [
+const rawQuestions: Omit<Question, "status">[] = [
   {
     "id": "q-mc-001",
     "type": "multiple",
@@ -3823,6 +3824,15 @@ export const questions: Question[] = [
   }
 ];
 
+const deriveStatus = (question: Omit<Question, "status">): QuestionStatus => {
+  if (question.examSuitability === "\uc0ad\uc81c\uad8c\uc7a5" || question.qualityStatus === "\uc0ad\uc81c\uad8c\uc7a5") return "disabled";
+  if (question.examSuitability === "\uc2ec\ud654\ud559\uc2b5" || question.type === "essay" || question.type === "prompt") return "deepPractice";
+  if (question.examSuitability === "\uc218\uc815\ud544\uc694" || question.qualityStatus !== "\uc815\uc0c1") return "review";
+  return "active";
+};
+
+export const questions: Question[] = [...rawQuestions.map((question) => ({ ...question, status: deriveStatus(question) })), ...tableQuestions];
+
 export const questionById = new Map(questions.map((question) => [question.id, question]));
 
 export const getQuestionById = (id: string) => questionById.get(id);
@@ -3832,5 +3842,6 @@ export const questionCounts = questions.reduce<Record<string, number>>((acc, que
   acc.total = (acc.total ?? 0) + 1;
   return acc;
 }, {});
+
 
 

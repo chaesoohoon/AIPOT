@@ -7,6 +7,7 @@ import type {
   FavoriteEntry,
   GradeStatus,
   Question,
+  QuestionType,
   UserSettings,
   WrongNoteEntry,
 } from "../types";
@@ -38,10 +39,27 @@ const write = <T,>(key: string, value: T) => {
 };
 
 export const storage = {
-  getAttempts: () => read<AttemptRecord[]>(ATTEMPTS_KEY, []),
+  getAttempts: () =>
+    read<AttemptRecord[]>(ATTEMPTS_KEY, []).map((attempt) => ({
+      ...attempt,
+      attemptId: attempt.attemptId ?? attempt.id,
+      correctAnswer: attempt.correctAnswer ?? questionMap.get(attempt.questionId)?.answer,
+      isCorrect: attempt.isCorrect ?? attempt.result === "correct",
+      isPartial: attempt.isPartial ?? attempt.result === "partial",
+      score: attempt.score ?? attempt.scoreRatio,
+    })),
   addAttempt: (attempt: Omit<AttemptRecord, "id" | "answeredAt">) => {
     const attempts = storage.getAttempts();
-    const next: AttemptRecord = { ...attempt, id: nowId(), answeredAt: new Date().toISOString() };
+    const id = nowId();
+    const next: AttemptRecord = {
+      ...attempt,
+      id,
+      attemptId: attempt.attemptId ?? id,
+      isCorrect: attempt.isCorrect ?? attempt.result === "correct",
+      isPartial: attempt.isPartial ?? attempt.result === "partial",
+      score: attempt.score ?? attempt.scoreRatio,
+      answeredAt: new Date().toISOString(),
+    };
     write(ATTEMPTS_KEY, [next, ...attempts].slice(0, 2000));
     return next;
   },
@@ -113,25 +131,70 @@ const byCategory = (records: AttemptRecord[]) => {
   }));
 };
 
+const byType = (records: AttemptRecord[]) => {
+  const map = new Map<QuestionType, { total: number; earned: number; wrong: number }>();
+  records.forEach((record) => {
+    const current = map.get(record.type) ?? { total: 0, earned: 0, wrong: 0 };
+    current.total += 1;
+    current.earned += record.scoreRatio;
+    if (record.result === "wrong") current.wrong += 1;
+    map.set(record.type, current);
+  });
+  return Array.from(map.entries()).map(([type, value]) => ({
+    type,
+    total: value.total,
+    accuracy: value.total ? Math.round((value.earned / value.total) * 100) : 0,
+    wrong: value.wrong,
+  }));
+};
+
 export const getLearningSnapshot = () => {
   const attempts = storage.getAttempts();
   const exams = storage.getExamResults();
   const total = attempts.length;
   const earned = attempts.reduce((sum, attempt) => sum + attempt.scoreRatio, 0);
   const accuracy = total ? Math.round((earned / total) * 100) : 0;
+  const uniqueSolved = new Set(attempts.map((attempt) => attempt.questionId)).size;
+  const recentAttempts = attempts.slice(0, 30);
+  const recentAccuracy = recentAttempts.length ? Math.round((recentAttempts.reduce((sum, attempt) => sum + attempt.scoreRatio, 0) / recentAttempts.length) * 100) : 0;
+  const examAverage = exams.length ? Math.round(exams.reduce((sum, exam) => sum + exam.score, 0) / exams.length) : 0;
+  const recentExam3 = exams.slice(0, 3);
+  const recentExam3Average = recentExam3.length ? Math.round(recentExam3.reduce((sum, exam) => sum + exam.score, 0) / recentExam3.length) : 0;
   const weak = byCategory(attempts)
+    .filter((item) => item.total >= 5)
     .sort((a, b) => b.wrong - a.wrong || a.accuracy - b.accuracy)
     .slice(0, 3);
   const recentScore = exams[0]?.score ?? 0;
-  const passPossibility = Math.max(0, Math.min(100, Math.round((accuracy * 0.55 + recentScore * 0.45) || 0)));
+  const passReadiness =
+    exams.length < 3
+      ? { label: "데이터 부족", basis: "실전모드 3회 이상 응시 후 분석 가능" }
+      : recentExam3Average >= 85
+        ? { label: "안정권", basis: "최근 3회 평균 85점 이상" }
+        : recentExam3Average >= 70
+          ? { label: "합격권", basis: "최근 3회 평균 70점 이상" }
+          : recentExam3Average >= 60
+            ? { label: "보완 필요", basis: "최근 3회 평균 60~69점" }
+            : { label: "기초 복습 필요", basis: "최근 3회 평균 60점 미만" };
+
+  const wrongNotes = storage.getWrongNotes();
+  const reviewedWrongAttempts = attempts.filter((attempt) => wrongNotes.some((note) => note.questionId === attempt.questionId));
+  const repeatedWrong = reviewedWrongAttempts.filter((attempt) => attempt.result === "wrong").length;
+  const relapseRate = reviewedWrongAttempts.length ? Math.round((repeatedWrong / reviewedWrongAttempts.length) * 100) : 0;
+  const reviewComplete = wrongNotes.length ? Math.round((wrongNotes.filter((note) => note.lastResult === "correct").length / wrongNotes.length) * 100) : 0;
 
   return {
     total,
+    uniqueSolved,
     accuracy,
+    recentAccuracy,
+    examAverage,
     wrongTotal: storage.getWrongNotes().length,
     weak,
     recentScore,
-    passPossibility,
+    passReadiness,
+    recentExam3Average,
+    relapseRate,
+    reviewComplete,
     examCount: exams.length,
   };
 };
@@ -153,6 +216,8 @@ export const getAccuracyByDifficulty = () => {
     accuracy: value.total ? Math.round((value.earned / value.total) * 100) : 0,
   }));
 };
+
+export const getAccuracyByType = () => byType(storage.getAttempts());
 
 export const getMostWrongConcepts = () => {
   const wrongNotes = storage.getWrongNotes();

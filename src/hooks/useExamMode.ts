@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { createExamQuestions, defaultExamSettings } from "../utils/exam";
+import { examBlueprint } from "../data/examBlueprint";
+import { createExamPlan, defaultExamSettings, type ExamShortage } from "../utils/exam";
 import { gradeQuestion } from "../utils/grading";
 import { makeWrongNoteEntry, storage } from "../utils/storage";
 import type { ExamResult, ExamSettings, Question } from "../types";
@@ -17,16 +18,21 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [startedAt, setStartedAt] = useState<number | undefined>();
+  const [shortages, setShortages] = useState<ExamShortage[]>([]);
+  const [targets, setTargets] = useState(createExamPlan(defaultExamSettings, [], []).targets);
 
   const current = examQuestions[currentIndex];
   const answeredCount = examQuestions.filter((question) => answers[question.id]?.trim()).length;
   const unanswered = examQuestions.length - answeredCount;
-  const availableCount = useMemo(() => createExamQuestions(settings, storage.getFavorites(), storage.getWrongNotes(), initialPoolIds).length, [initialPoolIds, settings]);
+  const examPlan = useMemo(() => createExamPlan(settings, storage.getFavorites(), storage.getWrongNotes(), initialPoolIds), [initialPoolIds, settings]);
+  const availableCount = examPlan.eligibleCount;
 
   const start = () => {
-    const selected = createExamQuestions(settings, storage.getFavorites(), storage.getWrongNotes(), initialPoolIds);
-    if (!selected.length) return false;
-    setExamQuestions(selected);
+    const plan = createExamPlan(settings, storage.getFavorites(), storage.getWrongNotes(), initialPoolIds);
+    setTargets(plan.targets);
+    setShortages(plan.shortages);
+    if (plan.shortages.length || !plan.questions.length) return false;
+    setExamQuestions(plan.questions);
     setCurrentIndex(0);
     setAnswers({});
     setFlagged(new Set());
@@ -52,6 +58,7 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
   const submit = () => {
     if (!examQuestions.length) return;
     const categoryBreakdown: ExamResult["categoryBreakdown"] = {};
+    const typeBreakdown: ExamResult["typeBreakdown"] = {};
     const grading: ExamResult["grading"] = {};
     const wrongQuestionIds: string[] = [];
     let earned = 0;
@@ -70,6 +77,11 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
       category.earned += grade.scoreRatio;
       categoryBreakdown[question.category] = category;
 
+      const type = typeBreakdown[question.type] ?? { total: 0, earned: 0 };
+      type.total += 1;
+      type.earned += grade.scoreRatio;
+      typeBreakdown[question.type] = type;
+
       if (grade.status === "correct") correctCount += 1;
       else if (grade.status === "partial") partialCount += 1;
       else wrongCount += 1;
@@ -78,7 +90,11 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
         questionId: question.id,
         mode: "exam",
         userAnswer,
+        correctAnswer: question.answer,
         result: grade.status,
+        isCorrect: grade.status === "correct",
+        isPartial: grade.status === "partial",
+        score: grade.scoreRatio,
         scoreRatio: grade.scoreRatio,
         category: question.category,
         difficulty: question.difficulty,
@@ -92,12 +108,11 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
     });
 
     const score = Math.round((earned / examQuestions.length) * 100);
-    const settingsStore = storage.getSettings();
     const result = storage.addExamResult({
       score,
       maxScore: 100,
-      passScore: settingsStore.passScore,
-      passed: score >= settingsStore.passScore,
+      passScore: examBlueprint.passScore,
+      passed: score >= examBlueprint.passScore,
       correctCount,
       partialCount,
       wrongCount,
@@ -107,6 +122,8 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
       answers,
       grading,
       categoryBreakdown,
+      typeBreakdown,
+      blueprint: { ...examBlueprint, typeTargets: targets },
       wrongQuestionIds,
     });
     onStored();
@@ -126,6 +143,9 @@ export function useExamMode({ initialPoolIds, onStored, onComplete }: UseExamMod
     answeredCount,
     unanswered,
     availableCount,
+    shortages,
+    targets,
+    blueprint: examBlueprint,
     start,
     setCurrentAnswer,
     toggleFlag,

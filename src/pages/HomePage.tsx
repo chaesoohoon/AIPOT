@@ -2,8 +2,9 @@ import { BarChart3, BookOpen, ClipboardCheck, Database, FileText, NotebookTabs, 
 import type { LucideIcon } from "lucide-react";
 import CreatorBanner from "../components/CreatorBanner";
 import ProgressBar from "../components/ProgressBar";
+import { examBlueprint } from "../data/examBlueprint";
 import { questionCounts } from "../data/questionBank";
-import { getLearningSnapshot, storage } from "../utils/storage";
+import { getLearningSnapshot } from "../utils/storage";
 import type { AppPage } from "../types";
 
 interface HomePageProps {
@@ -21,7 +22,6 @@ const secondaryMenu = [
 
 export default function HomePage({ onNavigate, onReset }: HomePageProps) {
   const snapshot = getLearningSnapshot();
-  const settings = storage.getSettings();
   const recommendation = snapshot.weak[0]?.category ?? "프롬프트 작성법";
 
   return (
@@ -32,7 +32,7 @@ export default function HomePage({ onNavigate, onReset }: HomePageProps) {
             <p className="text-sm font-black text-blue-700 dark:text-blue-300">AIPOT 2급 CBT 합격훈련소</p>
             <h1 className="mt-2 text-3xl font-black tracking-normal text-slate-950 dark:text-white md:text-4xl">오늘의 합격 루틴을 시작하세요</h1>
             <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-500 dark:text-slate-400">
-              문제은행 {questionCounts.total}문항 · 합격 기준 {settings.passScore}점 · 학습 기록은 브라우저에 자동 저장됩니다.
+              문제은행 {questionCounts.total}문항 · 합격 기준 {examBlueprint.passScore}점 · 학습 기록은 브라우저에 자동 저장됩니다.
             </p>
           </div>
           <div className="grid min-w-full gap-3 sm:grid-cols-3 lg:min-w-[520px]">

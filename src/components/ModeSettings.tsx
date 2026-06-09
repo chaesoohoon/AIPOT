@@ -47,6 +47,7 @@ export default function ModeSettings({ value, onChange, onStart, availableCount 
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Toggle label="표형 문제 포함하기" checked={value.includeTable} onChange={(checked) => onChange({ ...value, includeTable: checked })} />
         <Toggle label="서술형 포함하기" checked={value.includeEssay} onChange={(checked) => onChange({ ...value, includeEssay: checked })} />
         <Toggle label="프롬프트 작성형 포함하기" checked={value.includePrompt} onChange={(checked) => onChange({ ...value, includePrompt: checked })} />
         <Toggle label="오답 우선" checked={value.wrongFirst} onChange={(checked) => onChange({ ...value, wrongFirst: checked })} />
